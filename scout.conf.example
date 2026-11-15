@@ -1,0 +1,92 @@
+; Scout configuration — copy to data/scout.conf and fill in. data/ is git-ignored: your topic and keys stay local.
+;   mkdir -p data && cp scout.conf.example data/scout.conf && chmod 600 data/scout.conf
+[ntfy]
+; ntfy topics are public to anyone who knows the name: use a long random one, e.g.  scout-$(openssl rand -hex 12)
+topic = CHANGE-ME-long-random-topic-name
+; empty = Scout makes its own secret control topic (for the Mute / Useful buttons) on first start
+control_topic =
+server = https://ntfy.sh
+
+[scout]
+check_interval_hours = 6
+min_cvss_score = 8.0
+seen_db = data/seen.json
+
+[products]
+keywords = PHP, Apache, Joomla, MikroTik, Cisco, Ubuntu, Debian, Windows Server, Windows 11, Docker, Kubernetes, PostgreSQL, MySQL, MariaDB, FRITZ, Home Assistant, Ollama, Nginx, OpenSSH, OpenSSL, Linux kernel, Samba, Postfix, sudo, systemd, Python, Node.js, Git, IIS, RDP, Hyper-V, Exchange Server, VMware, Proxmox, Veeam, Fortinet, Palo Alto, Ubiquiti, pfSense, Zabbix, Grafana, macOS, iOS, Android, WireGuard, SearXNG, Eufy, EZVIZ, TP-Link, Samsung, Xiaomi, Huawei, Google Nest, Espressif, Microsoft 365, Entra ID, Azure, Intune, SharePoint, SQL Server, Microsoft Defender, BitLocker, NTLM, Citrix, Ivanti, SonicWall, WatchGuard, Sophos, Check Point, Synology, QNAP, HPE iLO, Juniper, Aruba, Zyxel, Netgear, DrayTek, Jenkins, GitLab, Atlassian, Nextcloud, Zimbra, Tomcat, Redis, MongoDB, Elasticsearch, HAProxy, Keycloak, WordPress, Chrome, Microsoft Edge, Firefox, Microsoft Office, Outlook, Microsoft Teams, OneDrive, Adobe, 7-Zip, WinRAR, OpenVPN, AnyDesk, TeamViewer, ScreenConnect, PRTG, Acronis, Nutanix, Windows Update
+; v2.3: the gear that wakes you up at once when an attack word sits next to it (the rest comes as one digest per cycle)
+; v3.6: what touches HOME gets a 🏠 in front of the title (read first); the rest is work. Empty = built-in list.
+home = Ubuntu, Linux kernel, Python, Docker, Chrome, Firefox, Home Assistant, Android
+critical = Windows Server, Active Directory, Exchange Server, Hyper-V, RDP, Entra ID, Microsoft 365, VMware, Proxmox, Veeam, Fortinet, Palo Alto, Cisco, MikroTik, Ubiquiti, pfSense, Citrix, Ivanti, SonicWall, Check Point, OpenSSH, OpenSSL, Linux kernel, sudo, Ubuntu, Debian, Docker, Kubernetes, PostgreSQL, SQL Server, PHP, Apache, Nginx, Joomla, Home Assistant, FRITZ, Chrome
+
+[privacy]
+user_agent = scout/1.0
+
+[anthropic]
+; Optional — a Claude API key adds a verdict (PATCH NOW / PATCH SOON / WATCH / FYI) and a short briefing to alerts,
+; plus the morning/evening briefs. Without it Scout still works: alerts carry the essentials only.
+; Get key at: https://console.anthropic.com
+; Then: pip install anthropic
+api_key =
+; v2.4: which Claude writes the briefing (claude-opus-5-5 = best, claude-haiku-5-5 = cheapest) and how many per cycle
+model = claude-sonnet-5-5
+max_per_cycle = 30
+
+[github]
+; Optional but recommended: a GitHub token raises the API limit from 60 to 5 000 calls per hour
+; (without it the seven GitHub checks go blind for the rest of the hour once the limit is spent).
+; Make one at https://github.com/settings/tokens -> "Generate new token (classic)" with NO scopes ticked,
+; paste it after the = and restart:  sudo systemctl restart scout
+token =
+
+[lanes]
+; v2.5: the fast lane re-reads the earliest sources every fast_minutes (KEV, Hacker News, Mastodon, GitHub PoCs are
+; always in it); everything else is read every check_interval_hours. Leave fast_rss empty for the default list:
+; oss-security, Full-Disclosure, Bugtraq, Exploit-DB, Cisco-SA, Joomla-SA, MSRC, PaloAlto-SA, Fortinet-PSIRT,
+; Debian-DSA, Ubuntu-USN, RedHat-SA, CERT-EU, CERT.be, CISA-Alerts, BleepingComputer, TheHackersNews, SecurityWeek,
+; Reddit-netsec, Reddit-cybersec
+fast_minutes = 20
+fast_rss =
+; v2.7: advisory feeds passed through IN FULL — items about your gear alert at once, every other item goes into
+; the digest. Leave empty for the default: Ubuntu-USN, Debian-DSA, Debian-DLA, RedHat-SA, AlmaLinux,
+; Linux-kernel-CVE, oss-security, Exploit-DB, ZDI, Cisco-SA, PaloAlto-SA, Fortinet-PSIRT, Joomla-SA, Jenkins-SA,
+; GitLab-SR, CERT-EU, CERT.be, NCSC-NL, CISA-Alerts, CISA-ICS
+full_feeds =
+
+[news]
+; v2.6: Google News searches (the exploitation words + your critical products), every fast check. on / off.
+google_news = on
+; Public Telegram channels, read through t.me/s/<name> (no account). Comma-separated, without @.
+telegram_channels = cvenotify
+; Channels that repeat every new CVE: only your critical gear is taken from them, and they never count as an
+; independent source for "Confirmed".
+telegram_cve_bots = cvenotify
+
+[report]
+; v3.6: the 6 h report keeps only items that name one of these products; the others are counted in one footer line.
+; Empty = everything. Urgent pushes, the morning/evening briefs and the weekly letter are never filtered.
+only =
+
+[brief]
+; v2.8: Claude as the analyst. Morning brief at the first check after morning_hour (the last 24 h: patch today,
+; this week, watch, noise); the weekly letter on weekly_weekday (0 = Monday … 6 = Sunday) after weekly_hour;
+; Patch Tuesday gets Claude's "patch these first". About one call a day. model: empty = the [anthropic] model.
+morning_hour = 7
+; v3.6: evening brief (what changed since the morning) after evening_hour; empty or 0 = off
+evening_hour = 18
+weekly_weekday = 6
+weekly_hour = 19
+model =
+
+[mute]
+; v2.9: products you already know about. Their pushes go to the digest (never away) for the time given, counted
+; from the first time the scout reads the line: hours (h) or days (d). Example:  items = Chrome:24h, GitLab:7d
+; The "Mute <product> 1 day" button on an alert does the same for 24 h.
+items =
+; v3.6: Mastodon/Telegram accounts whose posts always go to the report (daily digests, recaps, rants)
+accounts =
+
+[fixes]
+; v3.6: CVEs the fix tracker follows on Ubuntu's tracker besides the ones it picks up itself (urgent Linux alerts
+; that touch home). Pushes 'Fix shipped' with each PC's state. The PCs report via scout_pc.py to the <ctl>-pc topic.
+watch =

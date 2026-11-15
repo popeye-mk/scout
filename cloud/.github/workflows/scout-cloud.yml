@@ -1,0 +1,57 @@
+name: scout-cloud
+# The cloud copy of Scout. Every 30 min: home alive → quiet run (read, remember, push nothing);
+# home silent for 45 min → the full Scout runs here until home is back. State lives in the Actions cache.
+on:
+  schedule:
+    # Every 40 minutes (:00 and :40 of even hours, :20 of odd hours) = 36 runs a day, 1 080 a month. Every run is
+    # billed as at least 1 minute, so this stays well inside the 2 000 free minutes of a private repo. GitHub may
+    # start a run a few minutes late; that is fine.
+    - cron: '0 */2 * * *'
+    - cron: '40 */2 * * *'
+    - cron: '20 1-23/2 * * *'
+  workflow_dispatch: {}          # "Run workflow" button for a manual run
+permissions:
+  contents: write                # only for the monthly keepalive commit below
+concurrency:
+  group: scout-cloud
+  cancel-in-progress: false
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Europe/Brussels
+      HAS_AI: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The config goes to the runner's temp folder, outside the cached data/
+        run: echo "SCOUT_CONF=$RUNNER_TEMP/scout.conf" >> "$GITHUB_ENV"
+      - name: State from the previous run (seen.json, journal, outbox, Confirmed window)
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: scout-state-${{ github.run_id }}
+          restore-keys: scout-state-
+      - run: pip install -q -r cloud/requirements.txt
+      - name: Claude SDK (only when the ANTHROPIC_API_KEY secret is set)
+        if: env.HAS_AI == 'true'
+        run: pip install -q anthropic
+      - name: Config with the secrets
+        run: python3 cloud/make_conf.py
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_CTL_TOPIC: ${{ secrets.NTFY_CTL_TOPIC }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}     # GitHub's own per-run token: 1 000 API calls/h, never expires
+      - name: Scout cloud run
+        run: python3 scout.py --cloud
+      - name: Keep the schedule alive (GitHub pauses schedules after 60 days without a commit)
+        if: github.event_name == 'schedule'
+        run: |
+          last=$(git log -1 --format=%ct); now=$(date +%s)
+          if [ $((now - last)) -gt $((40 * 86400)) ]; then
+            git config user.name scout-cloud
+            git config user.email scout-cloud@users.noreply.github.com
+            git commit --allow-empty -m "keepalive: the schedule stays enabled"
+            git push
+          fi
