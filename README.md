@@ -7,7 +7,7 @@ pushes a short, plain-language alert to your phone.
 It is a single Python file, runs as a small systemd service on a home PC, and has an optional free twin on GitHub
 Actions that takes over when the PC is off.
 
-![Scout alerts: a kernel CVE checked against the local PC, the fix shipping, a Chrome zero-day, and the 6-hour report](docs/screenshot.png)
+<p align="center"><img src="docs/screenshot.png" width="420" alt="Scout alerts: a kernel CVE checked against the local PC, the fix shipping, a Chrome zero-day, and the 6-hour report"></p>
 
 > _Text from real Scout alerts of November 2026, shortened and rendered as cards for this page. The host name was replaced._
 
@@ -121,8 +121,16 @@ Companions: `scout_watch.py` (cron job that tells you when Scout itself has gone
 
 ## License
 
-[AGPL-3.0-or-later](LICENSE). Free to use, study, change and share. If you pass it on or run a changed version as
-a service for others, the same freedom goes with it.
+Scout — a passive threat-intelligence watcher for your own gear.
+Copyright (C) 2026 popeye-mk
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+[GNU Affero General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version. It is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+In short: free to use, study, change and share. If you pass it on, or run a changed version as a service for
+others, the same freedom goes with it.
 
 ## Status
 
